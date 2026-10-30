@@ -1,0 +1,19 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Java / Maven
+target/
+*.class
+
+# Local environment and IDE files
+.env
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS files
+Thumbs.db
+.DS_Store

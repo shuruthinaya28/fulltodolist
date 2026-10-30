@@ -1,0 +1,207 @@
+<main class="page-shell">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Daymark home">
+      <span class="brand-mark" aria-hidden="true">d</span>
+      <span>daymark</span>
+    </a>
+    <div class="topbar-actions">
+      @if (isAuthenticated) {
+        <span class="user-badge">{{ userName }}</span>
+        <button class="text-button logout-button" type="button" (click)="logout()">Log out</button>
+      }
+      <span class="topbar-note"><span class="status-dot"></span> A little progress, every day</span>
+    </div>
+  </header>
+
+  <section class="content" [class.auth-content]="!isAuthenticated">
+    <div class="intro">
+      <p class="eyebrow">A CALMER WAY TO GET THINGS DONE</p>
+      <h1>Make room for<br><span>what matters.</span></h1>
+      <p class="intro-copy">A little structure for your day, with space to focus on what matters most.</p>
+      @if (!isAuthenticated) {
+        <div class="auth-benefits" aria-label="Daymark benefits">
+          <div class="auth-benefit">
+            <span class="benefit-icon" aria-hidden="true">✓</span>
+            <span><strong>Find your focus</strong><small>Keep today's priorities in one calm place.</small></span>
+          </div>
+          <div class="auth-benefit">
+            <span class="benefit-icon" aria-hidden="true">↗</span>
+            <span><strong>Make steady progress</strong><small>Small steps add up, one day at a time.</small></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (!isAuthenticated) {
+      <section class="auth-panel card" aria-label="Authentication">
+        <div class="card-heading auth-heading">
+          <div>
+            <p class="section-kicker">{{ authMode === 'login' ? 'WELCOME BACK' : 'GET STARTED' }}</p>
+            <h2>{{ authMode === 'login' ? 'Sign in to Daymark' : 'Create your account' }}</h2>
+            <p class="auth-subtitle">{{ authMode === 'login' ? 'Pick up where you left off.' : 'Your next good day starts here.' }}</p>
+          </div>
+          <span class="auth-mark" aria-hidden="true">d</span>
+        </div>
+
+        <div class="auth-toggle" role="group" aria-label="Authentication mode">
+          <button type="button" [attr.aria-pressed]="authMode === 'login'" [class.selected]="authMode === 'login'" [disabled]="authLoading" (click)="setAuthMode('login')">Sign in</button>
+          <button type="button" [attr.aria-pressed]="authMode === 'register'" [class.selected]="authMode === 'register'" [disabled]="authLoading" (click)="setAuthMode('register')">Create account</button>
+        </div>
+
+        <form (ngSubmit)="submitAuth()" class="auth-form">
+          @if (authMode === 'register') {
+            <div class="auth-field">
+              <label for="auth-name">Full name</label>
+              <input id="auth-name" name="authName" type="text" [(ngModel)]="authName" minlength="2" maxlength="80" placeholder="e.g. Alex Morgan" autocomplete="name" [disabled]="authLoading" required>
+            </div>
+          }
+
+          <div class="auth-field">
+            <label for="auth-email">Email address</label>
+            <input id="auth-email" name="authEmail" type="email" [(ngModel)]="authEmail" maxlength="254" placeholder="you@example.com" autocomplete="email" [disabled]="authLoading" required>
+          </div>
+
+          <div class="auth-field">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" name="authPassword" type="password" [(ngModel)]="authPassword" minlength="6" maxlength="128" placeholder="Enter your password" [attr.autocomplete]="authMode === 'register' ? 'new-password' : 'current-password'" [disabled]="authLoading" required>
+            @if (authMode === 'register') {
+              <small>Use at least 6 characters.</small>
+            }
+          </div>
+
+          @if (authError) {
+            <div class="error-banner auth-error" role="alert" aria-live="assertive">
+              <span>{{ authError }}</span>
+            </div>
+          }
+
+          <button class="add-button auth-button" type="submit" [disabled]="authLoading" [attr.aria-busy]="authLoading">
+            @if (authLoading) {
+              <span class="button-spinner" aria-hidden="true"></span>
+              {{ authMode === 'login' ? 'Signing you in…' : 'Creating your account…' }}
+            } @else {
+              {{ authMode === 'login' ? 'Sign in' : 'Create account' }}
+            }
+          </button>
+          <p class="auth-privacy"><span aria-hidden="true">▣</span> Your account and tasks are private to you.</p>
+        </form>
+      </section>
+    } @else {
+      <section class="composer card" aria-label="Add a task">
+        <div class="card-heading">
+          <div>
+            <p class="section-kicker">{{ editingId ? 'UPDATE YOUR LIST' : 'START SOMEWHERE' }}</p>
+            <h2>{{ editingId ? 'Edit this task' : 'What needs doing?' }}</h2>
+          </div>
+          <span class="heading-spark" aria-hidden="true">✳</span>
+        </div>
+        <form (ngSubmit)="submitTask()">
+          <label class="sr-only" for="task-title">Task title</label>
+          <input id="task-title" name="title" type="text" [(ngModel)]="title" maxlength="120" placeholder="e.g. Take a proper lunch break" required>
+
+          <div class="form-bottom">
+            <label class="sr-only" for="task-description">Optional task details</label>
+            <input id="task-description" name="description" class="description-input" type="text" [(ngModel)]="description" maxlength="1000" placeholder="Add a little detail (optional)">
+
+            <label class="sr-only" for="task-priority">Task priority</label>
+            <select id="task-priority" name="priority" [(ngModel)]="priority">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+
+            <button class="add-button" type="submit" [disabled]="!title.trim() || saving">
+              <span aria-hidden="true">{{ editingId ? '✓' : '+' }}</span>
+              {{ saving ? 'Saving…' : editingId ? 'Save changes' : 'Add to list' }}
+            </button>
+          </div>
+
+          <div class="reminder-row">
+            <label class="sr-only" for="task-reminder">Reminder time</label>
+            <input id="task-reminder" name="reminderAt" type="datetime-local" [(ngModel)]="reminderAt" class="reminder-input">
+          </div>
+
+          @if (editingId) {
+            <button class="text-button cancel-edit" type="button" (click)="cancelEdit()">Cancel editing</button>
+          }
+        </form>
+      </section>
+    }
+
+    @if (errorMessage) {
+      <div class="error-banner" role="alert">
+        <span>{{ errorMessage }}</span>
+        <button class="text-button" type="button" (click)="loadTasks()">Try again</button>
+      </div>
+    }
+
+    @if (isAuthenticated) {
+      <section class="list-section" aria-label="Your tasks">
+        <div class="list-heading">
+          <div>
+            <p class="section-kicker">THE DAY, IN YOUR HANDS</p>
+            <h2>Your list <span class="count-pill">{{ tasks.length }}</span></h2>
+          </div>
+          <div class="filters" aria-label="Filter tasks">
+            <button type="button" [class.selected]="filter === 'all'" [attr.aria-pressed]="filter === 'all'" (click)="setFilter('all')">All</button>
+            <button type="button" [class.selected]="filter === 'active'" [attr.aria-pressed]="filter === 'active'" (click)="setFilter('active')">To do</button>
+            <button type="button" [class.selected]="filter === 'completed'" [attr.aria-pressed]="filter === 'completed'" (click)="setFilter('completed')">Done</button>
+          </div>
+        </div>
+
+        <div class="progress-track" role="progressbar" [attr.aria-valuenow]="completedCount" [attr.aria-valuemax]="tasks.length || 1" aria-label="Completed tasks">
+          <span [style.width.%]="tasks.length ? completedCount / tasks.length * 100 : 0"></span>
+        </div>
+        <p class="progress-caption">
+          @if (tasks.length) {
+            {{ completedCount }} of {{ tasks.length }} tasks complete
+          } @else {
+            Your progress starts with one small step
+          }
+        </p>
+
+        @if (loading) {
+          <div class="empty-state"><span class="loader" aria-hidden="true"></span><p>Gathering your list…</p></div>
+        } @else if (visibleTasks.length) {
+          <ul class="task-list">
+            @for (task of visibleTasks; track trackTask($index, task)) {
+              <li class="task-card" [class.is-complete]="task.completed">
+                <button class="check-button" type="button" [attr.aria-label]="task.completed ? 'Mark ' + task.title + ' as to do' : 'Complete ' + task.title" [attr.aria-pressed]="task.completed" (click)="toggleTask(task)">
+                  @if (task.completed) { <span aria-hidden="true">✓</span> }
+                </button>
+                <div class="task-copy">
+                  <div class="task-title-row">
+                    <h3>{{ task.title }}</h3>
+                    <span class="priority-tag" [class]="'priority-tag priority-' + task.priority.toLowerCase()">{{ task.priority }}</span>
+                  </div>
+                  @if (task.description) {
+                    <p class="task-description">{{ task.description }}</p>
+                  }
+                  @if (task.reminderAt) {
+                    <p class="task-date">Reminder {{ task.reminderAt | date:'MMM d, h:mm a' }}</p>
+                  } @else {
+                    <p class="task-date">Added {{ task.createdAt | date:'MMM d' }}</p>
+                  }
+                </div>
+                <div class="task-actions">
+                  <button class="icon-button" type="button" [attr.aria-label]="'Edit ' + task.title" (click)="editTask(task)">↗</button>
+                  <button class="icon-button delete-button" type="button" [attr.aria-label]="'Delete ' + task.title" (click)="deleteTask(task)">×</button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="empty-state">
+            <span class="empty-icon" aria-hidden="true">{{ filter === 'completed' ? '✳' : '○' }}</span>
+            <h3>{{ filter === 'completed' ? 'Nothing checked off yet' : filter === 'active' ? 'You’re all caught up' : 'A fresh page' }}</h3>
+            <p>{{ filter === 'completed' ? 'Finish a task and it will find its way here.' : filter === 'active' ? 'Enjoy the breathing room. You have done enough.' : 'Add your first task above and take it from there.' }}</p>
+          </div>
+        }
+      </section>
+    }
+
+    <footer class="footer-note">
+      <span aria-hidden="true">✦</span> Slow progress is still progress.
+    </footer>
+  </section>
+</main>
